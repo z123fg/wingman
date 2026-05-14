@@ -1,0 +1,19 @@
+{
+  "name": "live-transcription",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev -w apps/server",
+    "dev:producer": "npm run dev -w apps/producer",
+    "dev:consumer": "npm run dev -w apps/consumer",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "build": "npm run build -w packages/shared && npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
