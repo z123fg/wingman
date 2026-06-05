@@ -16,7 +16,10 @@ const DEEPGRAM_URL =
   `&channels=1` +
   `&interim_results=true` +
   `&endpointing=300` +
-  `&utterance_end_ms=1000`;
+  `&utterance_end_ms=1000` +
+  `&punctuate=true` +
+  `&smart_format=true` +
+  `&diarize=true`;
 
 /** End the session after this many ms with no recognised speech from Deepgram. */
 const SESSION_IDLE_MS = 10 * 60 * 1_000; // 10 minutes
@@ -51,13 +54,16 @@ export function openDeepgramConnection(
 
     const channel = parsed['channel'] as Record<string, unknown> | undefined;
     const alternatives = channel?.['alternatives'] as
-      | Array<{ transcript: string }>
+      | Array<{ transcript: string; words?: Array<{ speaker?: number }> }>
       | undefined;
     const transcript = alternatives?.[0]?.transcript ?? '';
 
     if (!transcript.trim()) return;
 
     const isFinal = (parsed['is_final'] as boolean | undefined) === true;
+
+    // Pick the speaker of the first word as the label for this chunk
+    const speaker = alternatives?.[0]?.words?.[0]?.speaker;
 
     // Speech detected — reset the session idle timer
     resetSessionIdleTimer(session, wss);
@@ -73,6 +79,7 @@ export function openDeepgramConnection(
       text: transcript,
       isFinal,
       timestamp: Date.now(),
+      ...(speaker !== undefined && { speaker }),
     };
 
     const payload = JSON.stringify(message);

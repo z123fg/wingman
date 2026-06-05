@@ -15,8 +15,9 @@ export default function App() {
   const [transcripts, setTranscripts] = useState<TranscriptEntry[]>([]);
   const [banner, setBanner] = useState<string | null>(null);
   const [muted, setMuted] = useState(false);
+  const [volume, setVolumeState] = useState(1.0);
 
-  const { init: initAudio, playChunk, stop: stopAudio } = useAudioPlayer();
+  const { init: initAudio, playChunk, stop: stopAudio, setVolume } = useAudioPlayer();
 
   const handleBinaryMessage = useCallback((data: ArrayBuffer) => {
     if (!muted) playChunk(data);
@@ -38,10 +39,10 @@ export default function App() {
           const lastIdx = prev.length - 1;
           if (lastIdx >= 0 && !prev[lastIdx].isFinal) {
             const updated = [...prev];
-            updated[lastIdx] = { id: prev[lastIdx].id, text: msg.text, isFinal: msg.isFinal };
+            updated[lastIdx] = { id: prev[lastIdx].id, text: msg.text, isFinal: msg.isFinal, speaker: msg.speaker };
             return updated;
           }
-          return [...prev, { id: entryId++, text: msg.text, isFinal: msg.isFinal }];
+          return [...prev, { id: entryId++, text: msg.text, isFinal: msg.isFinal, speaker: msg.speaker }];
         });
         break;
 
@@ -128,6 +129,24 @@ export default function App() {
             >
               {muted ? '🔇 Unmute' : '🔊 Mute'}
             </button>
+            <input
+              type="range"
+              min={0}
+              max={2}
+              step={0.05}
+              value={volume}
+              disabled={muted}
+              title={`Volume: ${Math.round(volume * 100)}%`}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                setVolumeState(v);
+                setVolume(v);
+              }}
+              style={{ width: 90, cursor: muted ? 'not-allowed' : 'pointer', opacity: muted ? 0.4 : 1 }}
+            />
+            <span style={{ fontSize: 12, color: '#555', minWidth: 36 }}>
+              {Math.round(volume * 100)}%
+            </span>
             <button
               onClick={handleLeave}
               style={{ marginLeft: 'auto', padding: '4px 12px', cursor: 'pointer' }}

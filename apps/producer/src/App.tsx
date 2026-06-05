@@ -11,6 +11,7 @@ interface TranscriptEntry {
   id: number;
   text: string;
   isFinal: boolean;
+  speaker?: number;
 }
 
 let entryId = 0;
@@ -41,10 +42,10 @@ export default function App() {
       const lastIdx = prev.length - 1;
       if (lastIdx >= 0 && !prev[lastIdx].isFinal) {
         const updated = [...prev];
-        updated[lastIdx] = { id: prev[lastIdx].id, text: msg.text, isFinal: msg.isFinal };
+        updated[lastIdx] = { id: prev[lastIdx].id, text: msg.text, isFinal: msg.isFinal, speaker: msg.speaker };
         return updated;
       }
-      return [...prev, { id: entryId++, text: msg.text, isFinal: msg.isFinal }];
+      return [...prev, { id: entryId++, text: msg.text, isFinal: msg.isFinal, speaker: msg.speaker }];
     });
   };
 
@@ -129,14 +130,33 @@ export default function App() {
               {transcripts.length === 0 && (
                 <span style={{ color: '#aaa' }}>Transcript will appear here…</span>
               )}
-              {transcripts.map((entry) => (
-                <span
-                  key={entry.id}
-                  style={{ color: entry.isFinal ? '#111' : '#999' }}
-                >
-                  {entry.text}{' '}
-                </span>
-              ))}
+              {transcripts.map((entry, idx) => {
+                const prevSpeaker = idx > 0 ? transcripts[idx - 1].speaker : undefined;
+                const speakerChanged = entry.speaker !== undefined && entry.speaker !== prevSpeaker;
+                const COLORS = ['#2563eb', '#16a34a', '#dc2626', '#9333ea', '#ea580c', '#0891b2'];
+                const color = entry.speaker !== undefined ? COLORS[entry.speaker % COLORS.length] : undefined;
+                return (
+                  <span key={entry.id}>
+                    {entry.speaker !== undefined && (speakerChanged || idx === 0) && (
+                      <span style={{
+                        display: 'block',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        letterSpacing: '0.05em',
+                        textTransform: 'uppercase',
+                        color,
+                        marginTop: idx === 0 ? 0 : 10,
+                        marginBottom: 2,
+                      }}>
+                        Speaker {entry.speaker}
+                      </span>
+                    )}
+                    <span style={{ color: entry.isFinal ? (color ?? '#111') : '#999' }}>
+                      {entry.text}{' '}
+                    </span>
+                  </span>
+                );
+              })}
             </div>
           </section>
         </>

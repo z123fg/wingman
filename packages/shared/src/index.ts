@@ -37,6 +37,8 @@ export interface TranscriptMessage {
   /** false = interim (live, may change); true = final (committed) */
   isFinal: boolean;
   timestamp: number;
+  /** Diarization speaker index (0, 1, 2…). Undefined if diarization unavailable. */
+  speaker?: number;
 }
 
 export interface ErrorMessage {

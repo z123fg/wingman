@@ -5,6 +5,7 @@ interface UseAudioPlayerReturn {
   init: () => Promise<void>;
   playChunk: (data: ArrayBuffer) => void;
   stop: () => void;
+  setVolume: (value: number) => void;
 }
 
 /**
@@ -16,6 +17,7 @@ interface UseAudioPlayerReturn {
 export function useAudioPlayer(): UseAudioPlayerReturn {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const workletNodeRef = useRef<AudioWorkletNode | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
 
   const init = useCallback(async () => {
     if (audioCtxRef.current) return; // already initialised
@@ -28,22 +30,36 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       numberOfOutputs: 1,
       outputChannelCount: [1],
     });
-    node.connect(ctx.destination);
+
+    const gain = ctx.createGain();
+    gain.gain.value = 1.0; // default: full volume
+
+    node.connect(gain);
+    gain.connect(ctx.destination);
 
     audioCtxRef.current = ctx;
     workletNodeRef.current = node;
+    gainNodeRef.current = gain;
   }, []);
 
   const playChunk = useCallback((data: ArrayBuffer) => {
     workletNodeRef.current?.port.postMessage(data, [data]);
   }, []);
 
+  const setVolume = useCallback((value: number) => {
+    if (gainNodeRef.current) {
+      gainNodeRef.current.gain.value = value;
+    }
+  }, []);
+
   const stop = useCallback(() => {
     workletNodeRef.current?.disconnect();
     workletNodeRef.current = null;
+    gainNodeRef.current?.disconnect();
+    gainNodeRef.current = null;
     audioCtxRef.current?.close();
     audioCtxRef.current = null;
   }, []);
 
-  return { init, playChunk, stop };
+  return { init, playChunk, stop, setVolume };
 }
